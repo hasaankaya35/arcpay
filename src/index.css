@@ -503,6 +503,27 @@ body {
   animation: pulse 2s infinite;
 }
 
+.deposit-btn {
+  width: 100%;
+  margin-top: 12px;
+  padding: 8px 12px;
+  background: rgba(6, 214, 160, 0.1);
+  border: 1px solid rgba(6, 214, 160, 0.25);
+  border-radius: var(--radius-sm);
+  color: var(--arc-accent);
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: var(--transition-normal);
+}
+
+.deposit-btn:hover {
+  background: rgba(6, 214, 160, 0.2);
+  border-color: rgba(6, 214, 160, 0.4);
+  transform: translateY(-1px);
+}
+
 /* Payment History */
 .payment-history {
   flex: 1;
@@ -863,6 +884,7 @@ body {
   font-size: 2.5rem;
   margin-bottom: 24px;
   box-shadow: var(--shadow-glow);
+  animation: float 3s ease-in-out infinite;
 }
 
 .welcome-title {
@@ -879,9 +901,9 @@ body {
 
 .welcome-suggestions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 12px;
-  max-width: 500px;
+  max-width: 650px;
 }
 
 .suggestion-card {

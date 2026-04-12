@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 
-// Simulated AI responses about Arc Network
+// Simulated AI responses about Arc Network  
 const AI_RESPONSES = {
   default: [
     "Arc is a Layer-1 blockchain built by Circle, designed as an Economic Operating System for the internet. It uses USDC as the native gas token, offering predictable dollar-denominated transaction costs. With sub-second deterministic finality powered by the Malachite consensus engine, Arc is purpose-built for institutional-grade financial applications.",
@@ -15,11 +15,14 @@ const AI_RESPONSES = {
   nanopayments: "Circle Nanopayments make sub-cent transactions possible! Here's how:\n\n1️⃣ Buyer signs a payment authorization **off-chain** (zero gas)\n2️⃣ Merchant verifies the signature instantly\n3️⃣ Service is provided immediately\n4️⃣ Circle Gateway **batches** thousands of authorizations\n5️⃣ Single on-chain settlement on Arc\n\n💡 Result: Payments as small as **$0.000001 USDC** become viable!\n\nUse cases: Per-API billing, AI agent commerce, compute marketplaces, streaming payments.",
   quantum: "Arc is the first blockchain with a post-quantum security roadmap! Announced April 2, 2026:\n\n🛡️ **Phase 1** (Mainnet) — Quantum-resistant wallet signatures using CRYSTALS-Dilithium & Falcon\n🔒 **Phase 2** — Smart contract state protection\n🏗️ **Phase 3** — Network infrastructure hardening (TLS 1.3, HSM)\n⚙️ **Phase 4** — Validator security\n\n⚠️ The 'Q-Day' threat (when quantum computers can break current crypto) is estimated around 2030. Arc is preparing NOW while other chains will need painful retrofits.",
   hackathon: "The Agentic Economy on Arc Hackathon runs April 20-26, 2026! 🏆\n\n💰 **$10,000 prize pool**\n📍 Online + San Francisco\n\n**Tracks:**\n1. Per-API Monetization — charge per API call\n2. AI Agent Commerce — autonomous AI trading\n3. Compute Marketplaces — buy/sell compute\n\n**Tech stack:** Circle Nanopayments + Arc + ERC-8183\n\nThe winning project from the previous hackathon was VibeCard — a viral rewards network using Circle Wallets + x402 protocol for instant USDC payouts.",
+  erc8183: "**ERC-8183** is a groundbreaking standard for AI agent commerce on Arc! 🤖\n\nIt defines a trustless **Job** primitive with 4 phases:\n\n1️⃣ **Post** — Agent A publishes a task with requirements\n2️⃣ **Lock** — Payment locked in smart contract escrow\n3️⃣ **Deliver** — Agent B completes the work and submits proof\n4️⃣ **Settle** — Automatic USDC payout upon verification\n\n🔑 Key benefit: No human oversight needed. AI agents can autonomously hire other AI agents, negotiate prices, and settle payments.\n\nThis enables a true **machine-to-machine economy** on Arc.",
+  institutions: "Arc has backing from 100+ major institutions! 🏛️\n\n**Financial Giants:**\n🏦 **BlackRock** — USDC reserve manager + strategic investor\n💰 **Goldman Sachs** — Testnet participant\n🏛️ **Deutsche Bank, HSBC, Standard Chartered** — Active testers\n\n**Payment Networks:**\n💳 **Visa & Mastercard** — Exploring stablecoin payment rails\n\n**Tech Partners:**\n☁️ **Amazon Web Services (AWS)** — Infrastructure partner\n🔒 **Fireblocks** — Institutional custody integration\n💻 **Cloudflare, FIS, Fiserv** — Network participants\n\nCircle itself is publicly traded (NYSE: **CRCL**) with ~**$22B market cap**.",
+  gas: "Gas fees on Arc work differently from other blockchains! ⛽\n\n**Traditional chains:**\n❌ ETH gas = volatile, unpredictable ($2 to $200+)\n❌ SOL fees = cheap but still token-denominated\n❌ Budget planning impossible for enterprises\n\n**Arc Network:**\n✅ Gas paid in **USDC** — always $1\n✅ Predictable, dollar-denominated costs\n✅ Sub-cent transaction fees\n✅ Perfect for enterprise budgeting\n\n💡 Example: A bank processing 1M daily transactions knows exactly what it costs beforehand. No surprises, no volatility risk.",
 }
 
 function getAIResponse(message) {
   const lower = message.toLowerCase()
-  if (lower.includes('arc') && (lower.includes('nedir') || lower.includes('what') || lower.includes('explain'))) {
+  if (lower.includes('arc') && (lower.includes('nedir') || lower.includes('what') || lower.includes('explain') || lower.includes('tell'))) {
     return AI_RESPONSES.arc
   }
   if (lower.includes('usdc') || lower.includes('circle') || lower.includes('stablecoin')) {
@@ -34,14 +37,27 @@ function getAIResponse(message) {
   if (lower.includes('hackathon') || lower.includes('yarışma') || lower.includes('prize') || lower.includes('ödül')) {
     return AI_RESPONSES.hackathon
   }
+  if (lower.includes('erc') || lower.includes('8183') || lower.includes('agent') || lower.includes('ajan')) {
+    return AI_RESPONSES.erc8183
+  }
+  if (lower.includes('institu') || lower.includes('blackrock') || lower.includes('visa') || lower.includes('partner') || lower.includes('kurum')) {
+    return AI_RESPONSES.institutions
+  }
+  if (lower.includes('gas') || lower.includes('fee') || lower.includes('ücret') || lower.includes('maliyet') || lower.includes('cost')) {
+    return AI_RESPONSES.gas
+  }
   return AI_RESPONSES.default[Math.floor(Math.random() * AI_RESPONSES.default.length)]
 }
 
 function generateTxHash() {
   const chars = '0123456789abcdef'
   let hash = '0x'
-  for (let i = 0; i < 12; i++) hash += chars[Math.floor(Math.random() * chars.length)]
-  return hash + '...'
+  for (let i = 0; i < 64; i++) hash += chars[Math.floor(Math.random() * chars.length)]
+  return hash
+}
+
+function shortHash(hash) {
+  return hash.slice(0, 10) + '...' + hash.slice(-6)
 }
 
 function formatTime(date) {
@@ -51,9 +67,38 @@ function formatTime(date) {
 const SUGGESTIONS = [
   { icon: '🌐', text: 'What is Arc Network?' },
   { icon: '💰', text: 'How do Nanopayments work?' },
-  { icon: '🔐', text: 'Tell me about quantum security' },
-  { icon: '🏆', text: 'What is the Arc Hackathon?' },
+  { icon: '🤖', text: 'Explain ERC-8183 agent commerce' },
+  { icon: '🏛️', text: 'Which institutions back Arc?' },
+  { icon: '⛽', text: 'How do gas fees work on Arc?' },
+  { icon: '🏆', text: 'Tell me about the Arc Hackathon' },
 ]
+
+// Render markdown text with **bold** and `code`
+function RenderMarkdown({ text }) {
+  return text.split('\n').map((line, j) => {
+    const parts = line.split(/(\*\*.*?\*\*|`.*?`)/g)
+    return (
+      <span key={j}>
+        {parts.map((part, k) => {
+          if (part.startsWith('**') && part.endsWith('**')) {
+            return <strong key={k} style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{part.slice(2, -2)}</strong>
+          }
+          if (part.startsWith('`') && part.endsWith('`')) {
+            return <code key={k} style={{
+              background: 'rgba(99,102,241,0.15)',
+              padding: '2px 6px',
+              borderRadius: '4px',
+              fontSize: '0.85em',
+              fontFamily: 'var(--font-mono)'
+            }}>{part.slice(1, -1)}</code>
+          }
+          return part
+        })}
+        {j < text.split('\n').length - 1 && <br />}
+      </span>
+    )
+  })
+}
 
 function ChatApp({ onBack }) {
   const [messages, setMessages] = useState([])
@@ -64,6 +109,7 @@ function ChatApp({ onBack }) {
   const [totalQueries, setTotalQueries] = useState(0)
   const [totalSpent, setTotalSpent] = useState(0)
   const [toast, setToast] = useState(null)
+  const [showDeposit, setShowDeposit] = useState(false)
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
 
@@ -129,8 +175,11 @@ function ChatApp({ onBack }) {
     }
   }
 
-  const handleSuggestion = (text) => {
-    sendMessage(text)
+  const handleDeposit = () => {
+    setBalance(prev => prev + 10)
+    setShowDeposit(false)
+    setToast({ txHash: generateTxHash(), amount: 10, type: 'deposit' })
+    setTimeout(() => setToast(null), 3000)
   }
 
   return (
@@ -149,12 +198,15 @@ function ChatApp({ onBack }) {
           <div className="wallet-balance-usd">≈ ${balance.toFixed(3)} USD</div>
           <div className="wallet-address">
             <span>0x7a3f...c829</span>
-            <span>📋</span>
+            <span style={{ cursor: 'pointer' }} onClick={() => navigator.clipboard?.writeText('0x7a3f9b2e4d1c8a5f6b3e7d0c2a9f4e8b1d6c829')}>📋</span>
           </div>
           <div className="wallet-network">
             <span className="dot"></span>
             Arc Testnet
           </div>
+          <button className="deposit-btn" onClick={handleDeposit}>
+            + Deposit USDC
+          </button>
         </div>
 
         {/* Payment History */}
@@ -165,7 +217,7 @@ function ChatApp({ onBack }) {
               No payments yet. Start chatting!
             </div>
           ) : (
-            payments.slice(0, 15).map((p, i) => (
+            payments.slice(0, 20).map((p, i) => (
               <div className="payment-item" key={i}>
                 <div className="payment-info">
                   <span className="payment-type">{p.type}</span>
@@ -192,8 +244,8 @@ function ChatApp({ onBack }) {
             <span className="sidebar-stat-value">$0.0010</span>
           </div>
           <div className="sidebar-stat">
-            <span className="sidebar-stat-label">Network</span>
-            <span className="sidebar-stat-value" style={{ color: 'var(--arc-accent)' }}>Arc</span>
+            <span className="sidebar-stat-label">Settlement</span>
+            <span className="sidebar-stat-value" style={{ color: 'var(--arc-accent)' }}>Arc L1</span>
           </div>
         </div>
       </aside>
@@ -227,7 +279,7 @@ function ChatApp({ onBack }) {
               </p>
               <div className="welcome-suggestions">
                 {SUGGESTIONS.map((s, i) => (
-                  <div className="suggestion-card" key={i} onClick={() => handleSuggestion(s.text)}>
+                  <div className="suggestion-card" key={i} onClick={() => sendMessage(s.text)}>
                     <div className="suggestion-icon">{s.icon}</div>
                     <div className="suggestion-text">{s.text}</div>
                   </div>
@@ -243,17 +295,12 @@ function ChatApp({ onBack }) {
                   </div>
                   <div>
                     <div className="message-content">
-                      {msg.content.split('\n').map((line, j) => (
-                        <span key={j}>
-                          {line.replace(/\*\*(.*?)\*\*/g, '').replace(/`(.*?)`/g, '$1')}
-                          {j < msg.content.split('\n').length - 1 && <br />}
-                        </span>
-                      ))}
+                      <RenderMarkdown text={msg.content} />
                     </div>
                     {msg.role === 'ai' && msg.txHash && (
                       <div className="message-payment">
                         <span className="check">✓</span>
-                        Paid ${msg.cost?.toFixed(4)} USDC • {msg.txHash}
+                        Paid ${msg.cost?.toFixed(4)} USDC • {shortHash(msg.txHash)}
                       </div>
                     )}
                   </div>
@@ -298,7 +345,7 @@ function ChatApp({ onBack }) {
           </div>
           <div className="chat-input-hint">
             <span>Press Enter to send • Shift+Enter for new line</span>
-            <span>Cost: $0.001 USDC per query</span>
+            <span>⚡ Cost: $0.001 USDC per query • Gas-free via Nanopayments</span>
           </div>
         </div>
       </main>
@@ -306,10 +353,15 @@ function ChatApp({ onBack }) {
       {/* Transaction Toast */}
       {toast && (
         <div className="tx-toast">
-          <div className="tx-toast-icon">✓</div>
+          <div className="tx-toast-icon">{toast.type === 'deposit' ? '💰' : '✓'}</div>
           <div className="tx-toast-info">
-            <span className="tx-toast-title">Payment Confirmed — ${toast.amount.toFixed(4)} USDC</span>
-            <span className="tx-toast-hash">Tx: {toast.txHash} • Arc Testnet</span>
+            <span className="tx-toast-title">
+              {toast.type === 'deposit' 
+                ? `Deposit Received — +$${toast.amount.toFixed(2)} USDC` 
+                : `Payment Confirmed — $${toast.amount.toFixed(4)} USDC`
+              }
+            </span>
+            <span className="tx-toast-hash">Tx: {shortHash(toast.txHash)} • Arc Testnet</span>
           </div>
         </div>
       )}
