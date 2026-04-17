@@ -1049,14 +1049,43 @@ body {
   
   .hero-actions {
     flex-direction: column;
+    width: 100%;
+  }
+
+  .hero-actions .btn-primary, .hero-actions .btn-secondary {
+    width: 100%;
+    justify-content: center;
   }
   
   .chat-app {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow-y: auto;
   }
   
   .sidebar {
-    display: none;
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--border-subtle);
+    flex-shrink: 0;
+    max-height: 40vh;
+    overflow-y: auto;
+  }
+
+  .payment-history {
+    max-height: 150px;
+  }
+
+  .chat-main {
+    flex: 1;
+    min-height: 60vh;
+  }
+
+  .chat-input-area {
+    position: sticky;
+    bottom: 0;
+    background: rgba(10, 11, 26, 0.95);
   }
   
   .landing-nav {
