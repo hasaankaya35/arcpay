@@ -1,4 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
+import { ethers } from 'ethers'
+import ArcPayABI from '../ArcPayABI.json'
+
+// We will get this from .env or default to empty
+const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS || "0x0000000000000000000000000000000000000000"
 
 // Simulated AI responses about Arc Network  
 const AI_RESPONSES = {
@@ -49,14 +54,8 @@ function getAIResponse(message) {
   return AI_RESPONSES.default[Math.floor(Math.random() * AI_RESPONSES.default.length)]
 }
 
-function generateTxHash() {
-  const chars = '0123456789abcdef'
-  let hash = '0x'
-  for (let i = 0; i < 64; i++) hash += chars[Math.floor(Math.random() * chars.length)]
-  return hash
-}
-
 function shortHash(hash) {
+  if (!hash) return "";
   return hash.slice(0, 10) + '...' + hash.slice(-6)
 }
 
@@ -104,12 +103,16 @@ function ChatApp({ onBack }) {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [isTyping, setIsTyping] = useState(false)
-  const [balance, setBalance] = useState(10.000)
+  
+  // Real Web3 States
+  const [walletAddress, setWalletAddress] = useState('')
+  const [signer, setSigner] = useState(null)
+  const [balance, setBalance] = useState(0.000)
+  
   const [payments, setPayments] = useState([])
   const [totalQueries, setTotalQueries] = useState(0)
   const [totalSpent, setTotalSpent] = useState(0)
   const [toast, setToast] = useState(null)
-  const [showDeposit, setShowDeposit] = useState(false)
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
 
@@ -121,50 +124,111 @@ function ChatApp({ onBack }) {
     scrollToBottom()
   }, [messages, isTyping])
 
+  const handleConnectWallet = async () => {
+    if (window.ethereum) {
+      try {
+        const provider = new ethers.BrowserProvider(window.ethereum)
+        const accounts = await provider.send("eth_requestAccounts", [])
+        const ethSigner = await provider.getSigner()
+        setWalletAddress(accounts[0])
+        setSigner(ethSigner)
+        
+        // Check network (Arc Testnet 5042002)
+        const network = await provider.getNetwork()
+        if (network.chainId !== 5042002n) {
+           try {
+             await window.ethereum.request({
+               method: 'wallet_switchEthereumChain',
+               params: [{ chainId: '0x4cef52' }], // 5042002 in hex
+             });
+           } catch(e) {
+             console.error("Please add Arc Testnet manually to MetaMask.");
+           }
+        }
+        
+        // Fetch real balance
+        const bal = await provider.getBalance(accounts[0])
+        setBalance(parseFloat(ethers.formatEther(bal)))
+        setToast({ txHash: 'Connected', amount: 0, type: 'deposit' })
+        setTimeout(() => setToast(null), 3000)
+      } catch (err) {
+        console.error("Wallet connection failed", err)
+      }
+    } else {
+      alert("Please install MetaMask!")
+    }
+  }
+
   const sendMessage = async (text) => {
     if (!text.trim() || isTyping) return
-    
+    if (!signer) {
+      alert("Lütfen önce MetaMask cüzdanınızı bağlayın! (Please connect your wallet first!)")
+      return
+    }
+
     const userMsg = { role: 'user', content: text, time: new Date() }
     setMessages(prev => [...prev, userMsg])
     setInput('')
     setIsTyping(true)
 
-    // Simulate payment
-    const cost = 0.001
-    const txHash = generateTxHash()
-    const now = new Date()
-    
-    // Deduct balance
-    setBalance(prev => Math.max(0, prev - cost))
-    setTotalQueries(prev => prev + 1)
-    setTotalSpent(prev => prev + cost)
-    
-    // Add payment record
-    const payment = {
-      type: 'AI Query',
-      amount: cost,
-      time: now,
-      txHash,
-    }
-    setPayments(prev => [payment, ...prev])
-    
-    // Show toast
-    setToast({ txHash, amount: cost })
-    setTimeout(() => setToast(null), 3000)
+    try {
+      // Connect to the deployed contract
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, ArcPayABI, signer)
+      
+      // Cost: 0.001 USDC (assuming native gas token has 18 decimals like standard ETH)
+      const costWei = ethers.parseEther("0.001") 
+      
+      // Prompt Metamask to pay
+      const tx = await contract.payForQuery({ value: costWei })
+      
+      // Adding a temporary "processing" message
+      setToast({ txHash: 'Processing Transaction...', amount: 0.001, type: 'info' })
+      
+      // Wait for network confirmation
+      const receipt = await tx.wait() 
+      
+      const cost = 0.001
+      const txHash = tx.hash
+      const now = new Date()
+      
+      // Update real balance
+      const provider = signer.provider
+      const bal = await provider.getBalance(walletAddress)
+      setBalance(parseFloat(ethers.formatEther(bal)))
+      
+      setTotalQueries(prev => prev + 1)
+      setTotalSpent(prev => prev + cost)
+      
+      // Add payment record
+      const payment = {
+        type: 'AI Query',
+        amount: cost,
+        time: now,
+        txHash,
+      }
+      setPayments(prev => [payment, ...prev])
+      
+      // Show confirmation toast
+      setToast({ txHash, amount: cost })
+      setTimeout(() => setToast(null), 3000)
 
-    // Simulate AI thinking
-    await new Promise(r => setTimeout(r, 1200 + Math.random() * 800))
-    
-    const aiResponse = getAIResponse(text)
-    const aiMsg = { 
-      role: 'ai', 
-      content: aiResponse, 
-      time: new Date(),
-      txHash,
-      cost,
+      // Get AI response
+      const aiResponse = getAIResponse(text)
+      const aiMsg = { 
+        role: 'ai', 
+        content: aiResponse, 
+        time: new Date(),
+        txHash,
+        cost,
+      }
+      setMessages(prev => [...prev, aiMsg])
+
+    } catch (err) {
+      console.error(err)
+      setMessages(prev => [...prev, { role: 'ai', content: "Payment rejected or transaction failed. Please try again.", time: new Date() }])
+      setToast(null)
     }
     
-    setMessages(prev => [...prev, aiMsg])
     setIsTyping(false)
   }
 
@@ -175,52 +239,50 @@ function ChatApp({ onBack }) {
     }
   }
 
-  const handleDeposit = () => {
-    setBalance(prev => prev + 10)
-    setShowDeposit(false)
-    setToast({ txHash: generateTxHash(), amount: 10, type: 'deposit' })
-    setTimeout(() => setToast(null), 3000)
-  }
-
   return (
     <div className="chat-app">
       {/* Sidebar */}
       <aside className="sidebar">
         <div className="sidebar-header">
           <div className="sidebar-logo" onClick={onBack}>⚡ ArcPay</div>
-          <div className="sidebar-subtitle">Pay-per-Query AI Chat</div>
+          <div className="sidebar-subtitle">Web3 dApp: Pay-per-Query</div>
         </div>
 
         {/* Wallet */}
         <div className="wallet-card">
-          <div className="wallet-label">USDC Balance</div>
-          <div className="wallet-balance">{balance.toFixed(3)}</div>
-          <div className="wallet-balance-usd">≈ ${balance.toFixed(3)} USD</div>
-          <div className="wallet-address">
-            <span>0x7a3f...c829</span>
-            <span style={{ cursor: 'pointer' }} onClick={() => navigator.clipboard?.writeText('0x7a3f9b2e4d1c8a5f6b3e7d0c2a9f4e8b1d6c829')}>📋</span>
-          </div>
-          <div className="wallet-network">
-            <span className="dot"></span>
-            Arc Testnet
-          </div>
-          <button className="deposit-btn" onClick={handleDeposit}>
-            + Deposit USDC
-          </button>
+          <div className="wallet-label">USDC Balance (Testnet)</div>
+          <div className="wallet-balance">{balance.toFixed(4)}</div>
+          
+          {walletAddress ? (
+            <>
+              <div className="wallet-address">
+                <span>{shortHash(walletAddress)}</span>
+                <span style={{ cursor: 'pointer' }} onClick={() => navigator.clipboard?.writeText(walletAddress)}>📋</span>
+              </div>
+              <div className="wallet-network">
+                <span className="dot"></span>
+                Arc Testnet (Live)
+              </div>
+            </>
+          ) : (
+            <button className="deposit-btn" onClick={handleConnectWallet} style={{ background: '#f6851b', color: 'white' }}>
+              🦊 Connect MetaMask
+            </button>
+          )}
         </div>
 
         {/* Payment History */}
         <div className="payment-history">
-          <div className="payment-history-title">Recent Payments</div>
+          <div className="payment-history-title">On-Chain Payments</div>
           {payments.length === 0 ? (
             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', padding: '16px 0', textAlign: 'center' }}>
-              No payments yet. Start chatting!
+              No payments yet. Ask a question!
             </div>
           ) : (
             payments.slice(0, 20).map((p, i) => (
               <div className="payment-item" key={i}>
                 <div className="payment-info">
-                  <span className="payment-type">{p.type}</span>
+                  <span className="payment-type">Tx: {shortHash(p.txHash)}</span>
                   <span className="payment-time">{formatTime(p.time)}</span>
                 </div>
                 <span className="payment-amount debit">-${p.amount.toFixed(4)}</span>
@@ -240,10 +302,6 @@ function ChatApp({ onBack }) {
             <span className="sidebar-stat-value">${totalSpent.toFixed(4)}</span>
           </div>
           <div className="sidebar-stat">
-            <span className="sidebar-stat-label">Avg Cost</span>
-            <span className="sidebar-stat-value">$0.0010</span>
-          </div>
-          <div className="sidebar-stat">
             <span className="sidebar-stat-label">Settlement</span>
             <span className="sidebar-stat-value" style={{ color: 'var(--arc-accent)' }}>Arc L1</span>
           </div>
@@ -260,7 +318,7 @@ function ChatApp({ onBack }) {
               <div className="chat-ai-name">ArcPay AI</div>
               <div className="chat-ai-status">
                 <span className="dot"></span>
-                Online — Arc Testnet
+                Web3 Active
               </div>
             </div>
           </div>
@@ -272,10 +330,9 @@ function ChatApp({ onBack }) {
           {messages.length === 0 ? (
             <div className="welcome-container">
               <div className="welcome-icon">🤖</div>
-              <h2 className="welcome-title">Welcome to ArcPay</h2>
+              <h2 className="welcome-title">Welcome to ArcPay dApp</h2>
               <p className="welcome-desc">
-                Ask me anything about Arc Network, USDC, or blockchain. 
-                Each query costs just $0.001 USDC via Circle Nanopayments.
+                This is a live Web3 integration. Each query requires a real transaction on the Arc Testnet using MetaMask. Cost is $0.001 USDC per query.
               </p>
               <div className="welcome-suggestions">
                 {SUGGESTIONS.map((s, i) => (
@@ -298,9 +355,9 @@ function ChatApp({ onBack }) {
                       <RenderMarkdown text={msg.content} />
                     </div>
                     {msg.role === 'ai' && msg.txHash && (
-                      <div className="message-payment">
+                      <div className="message-payment" style={{ cursor: 'pointer' }} onClick={() => window.open(`https://testnet.arcscan.app/tx/${msg.txHash}`)}>
                         <span className="check">✓</span>
-                        Paid ${msg.cost?.toFixed(4)} USDC • {shortHash(msg.txHash)}
+                        Paid ${msg.cost?.toFixed(4)} USDC • {shortHash(msg.txHash)} (View Tracker)
                       </div>
                     )}
                   </div>
@@ -311,8 +368,11 @@ function ChatApp({ onBack }) {
                 <div className="message ai">
                   <div className="message-avatar">🤖</div>
                   <div className="message-content">
-                    <div className="typing-indicator">
-                      <span></span><span></span><span></span>
+                    <div className="typing-indicator" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '8px' }}>
+                      <span style={{ fontSize: '0.8rem', opacity: 0.7 }}>Awaiting wallet signature & network confirmation...</span>
+                      <div style={{ display: 'flex', gap: '4px' }}>
+                        <span></span><span></span><span></span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -333,19 +393,25 @@ function ChatApp({ onBack }) {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               rows={1}
-              disabled={isTyping}
+              disabled={isTyping || !signer}
             />
             <button 
               className="chat-send-btn" 
               onClick={() => sendMessage(input)}
-              disabled={!input.trim() || isTyping}
+              disabled={!input.trim() || isTyping || !signer}
             >
               ➤
             </button>
           </div>
           <div className="chat-input-hint">
-            <span>Press Enter to send • Shift+Enter for new line</span>
-            <span>⚡ Cost: $0.001 USDC per query • Gas-free via Nanopayments</span>
+            {!signer ? (
+              <span style={{ color: '#f6851b' }}>⚠️ Please Connect MetaMask to start chatting!</span>
+            ) : (
+              <>
+                <span>Press Enter to send • Connects to Web3 Contract</span>
+                <span>⚡ Cost: $0.001 USDC (Requires MetaMask Approval)</span>
+              </>
+            )}
           </div>
         </div>
       </main>
@@ -353,15 +419,17 @@ function ChatApp({ onBack }) {
       {/* Transaction Toast */}
       {toast && (
         <div className="tx-toast">
-          <div className="tx-toast-icon">{toast.type === 'deposit' ? '💰' : '✓'}</div>
+          <div className="tx-toast-icon">{toast.type === 'deposit' ? '🦊' : (toast.type === 'info' ? '⏳' : '✓')}</div>
           <div className="tx-toast-info">
             <span className="tx-toast-title">
               {toast.type === 'deposit' 
-                ? `Deposit Received — +$${toast.amount.toFixed(2)} USDC` 
-                : `Payment Confirmed — $${toast.amount.toFixed(4)} USDC`
+                ? `MetaMask Connected ✓` 
+                : (toast.type === 'info' ? 'Processing on Blockchain...' : `Payment Confirmed — $${toast.amount.toFixed(4)} USDC`)
               }
             </span>
-            <span className="tx-toast-hash">Tx: {shortHash(toast.txHash)} • Arc Testnet</span>
+            <span className="tx-toast-hash">
+              {toast.txHash === 'Connected' || toast.txHash === 'Processing Transaction...' ? toast.txHash : `Tx: ${shortHash(toast.txHash)} • View on Explorer`}
+            </span>
           </div>
         </div>
       )}

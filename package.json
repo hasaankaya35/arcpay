@@ -9,12 +9,17 @@
     "preview": "vite preview"
   },
   "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^6.1.2",
+    "dotenv": "^17.4.2",
+    "hardhat": "^3.4.0",
     "typescript": "~6.0.2",
     "vite": "^8.0.4"
   },
   "dependencies": {
     "@vitejs/plugin-react": "^6.0.1",
+    "ethers": "^6.16.0",
     "react": "^19.2.5",
-    "react-dom": "^19.2.5"
+    "react-dom": "^19.2.5",
+    "solc": "^0.8.34"
   }
 }

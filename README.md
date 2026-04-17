@@ -115,8 +115,10 @@ High barrier to entry   →   Accessible to everyone
 - [x] Core chat interface with micropayment tracking
 - [x] USDC balance management
 - [x] Transaction history and analytics
+- [x] **Real Web3 Smart Contract deployed to Arc Testnet**
+- [x] **MetaMask (ethers.js) Wallet Integration**
 - [ ] Circle Wallet SDK integration (mainnet)
-- [ ] Real Nanopayments API integration
+- [ ] Real Nanopayments API integration (currently using Arc native L1 transactions)
 - [ ] Multi-model AI support (GPT, Claude, Gemini)
 - [ ] API marketplace for third-party services
 - [ ] Mobile-responsive PWA
