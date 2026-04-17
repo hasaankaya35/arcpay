@@ -2,8 +2,8 @@ import { useState, useRef, useEffect } from 'react'
 import { ethers } from 'ethers'
 import ArcPayABI from '../ArcPayABI.json'
 
-// We will get this from .env or default to empty
-const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS || "0x0000000000000000000000000000000000000000"
+// We will get this from .env or default to deployed testnet contract
+const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS || "0x7798249325D81ad1Ca6eFe8F382edf6F9240d469"
 
 // Simulated AI responses about Arc Network  
 const AI_RESPONSES = {
@@ -369,7 +369,7 @@ function ChatApp({ onBack }) {
                   <div className="message-avatar">🤖</div>
                   <div className="message-content">
                     <div className="typing-indicator" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '8px' }}>
-                      <span style={{ fontSize: '0.8rem', opacity: 0.7 }}>Awaiting wallet signature & network confirmation...</span>
+                      <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>Awaiting wallet signature & network confirmation...</div>
                       <div style={{ display: 'flex', gap: '4px' }}>
                         <span></span><span></span><span></span>
                       </div>
