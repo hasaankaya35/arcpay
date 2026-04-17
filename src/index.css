@@ -737,6 +737,8 @@ body {
   border-radius: var(--radius-lg);
   font-size: 0.95rem;
   line-height: 1.6;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .message.ai .message-content {
