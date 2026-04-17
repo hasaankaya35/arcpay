@@ -80,7 +80,10 @@ body {
 }
 
 .app {
-  min-height: 100vh;
+  height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 /* ===== SCROLLBAR ===== */
@@ -406,7 +409,8 @@ body {
 .chat-app {
   display: grid;
   grid-template-columns: 300px 1fr;
-  height: 100vh;
+  height: 100%;
+  width: 100%;
   overflow: hidden;
 }
 
@@ -613,6 +617,8 @@ body {
   flex-direction: column;
   background: var(--bg-primary);
   position: relative;
+  overflow: hidden;
+  height: 100%;
 }
 
 .chat-main::before {
